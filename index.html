@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>কেমিস্ট্রি ১ম অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "নিচের কোনটি তীব্র এসিড নয়?",
+          options: {
+            A: "ডাইক্লোরো অ্যাসিটিক",
+            B: "HCl",
+            C: "অ্যাসিটিক এসিড",
+            D: "H₂SO₄",
+          },
+          correct: "C",
+          explanation:
+            "<p>তীব্র এসিড সম্পূর্ণভাবে বিয়োজিত হয়, যেমন HCl (হাইড্রোক্লোরিক এসিড) এবং H₂SO₄ (সালফিউরিক এসিড)। ডাইক্লোরো অ্যাসিটিক এসিড (Cl₂CHCOOH) যদিও অ্যাসিটিক এসিডের চেয়ে তীব্র, তবে এটি একটি দুর্বল এসিড। অ্যাসিটিক এসিড (CH₃COOH) একটি দুর্বল জৈব এসিড।</p>",
+        },
+        {
+          id: 2,
+          question: "নিচের কোনটি সবচেয়ে শক্তিশালী এসিড?",
+          options: {
+            A: "CH₃COOH",
+            B: "ফরমিক",
+            C: "HNO₃",
+            D: "বেনজয়িক",
+          },
+          correct: "C",
+          explanation:
+            "<p>তীব্র এসিডগুলো হলো যারা জলীয় দ্রবণে প্রায় সম্পূর্ণভাবে বিয়োজিত হয়। HNO₃ (নাইট্রিক এসিড) একটি শক্তিশালী খনিজ এসিড। CH₃COOH (অ্যাসিটিক এসিড), ফরমিক এসিড (HCOOH), এবং বেনজয়িক এসিড (C₆H₅COOH) হলো দুর্বল জৈব এসিড।</p>",
+        },
+        {
+          id: 3,
+          question: "নিচের কোনটি অধিক তীব্র বা শক্তিশালী এসিড?",
+          options: {
+            A: "BrCH₂COOH",
+            B: "ICH₂COOH",
+            C: "ClCH₂COOH",
+            D: "HNO₃",
+          },
+          correct: "D",
+          explanation:
+            "<p>অ্যাসিটিক এসিডের হ্যালাইড প্রতিস্থাপিত ডেরিভেটিভগুলি (যেমন BrCH₂COOH, ICH₂COOH, ClCH₂COOH) সাধারণ অ্যাসিটিক এসিডের চেয়ে বেশি তীব্র হয়, কারণ হ্যালাইড পরমাণুগুলির ইলেকট্রন আকর্ষণকারী প্রভাব কার্বক্সিলিক এসিডের প্রোটন ত্যাগ করার ক্ষমতা বাড়ায়। তবে, HNO₃ (নাইট্রিক এসিড) একটি শক্তিশালী খনিজ এসিড এবং এই প্রদত্ত জৈব এসিডগুলির চেয়ে অনেক বেশি শক্তিশালী।</p>",
+        },
+        {
+          id: 4,
+          question: "নিচের কোনটি অধিক শক্তিশালী ক্ষার?",
+          options: {
+            A: "NaOH",
+            B: "KOH",
+            C: "Ca(OH)₂",
+            D: "NH₄OH",
+          },
+          correct: "B",
+          explanation:
+            "<p>ক্ষারকের তীব্রতা সাধারণত ক্ষার ধাতুর আকার বৃদ্ধির সাথে সাথে বৃদ্ধি পায়। LiOH, NaOH, KOH, RbOH, CsOH হলো তীব্র ক্ষারক। এদের মধ্যে, CsOH সবচেয়ে শক্তিশালী, কিন্তু প্রদত্ত বিকল্পগুলির মধ্যে KOH (পটাশিয়াম হাইড্রোক্সাইড) NaOH (সোডিয়াম হাইড্রোক্সাইড) এর চেয়ে বেশি শক্তিশালী। Ca(OH)₂ (ক্যালসিয়াম হাইড্রোক্সাইড) তুলনামূলকভাবে দুর্বল ক্ষার (পানিতে কম দ্রবণীয়), এবং NH₄OH (অ্যামোনিয়াম হাইড্রোক্সাইড) একটি দুর্বল ক্ষার।</p>",
+        },
+        {
+          id: 5,
+          question: "এসিডের তীব্রতা নির্ভর করে কোনটির উপর?",
+          options: {
+            A: "Ka",
+            B: "Kb",
+            C: "Kc",
+            D: "সবকটি",
+          },
+          correct: "A",
+          explanation:
+            "<p>এসিডের তীব্রতা তার বিয়োজন ধ্রুবক (Ka) এর মানের উপর নির্ভর করে। Ka এর মান যত বেশি হবে, এসিড তত বেশি শক্তিশালী হবে, কারণ এটি নির্দেশ করে যে এসিডটি জলীয় দ্রবণে তত বেশি পরিমাণে বিয়োজিত হয়ে H⁺ আয়ন উৎপন্ন করছে। Kb ক্ষারকের তীব্রতা বোঝায় এবং Kc সাম্যধ্রুবক।</p>",
+        },
+        {
+          id: 6,
+          question: "নিম্নের কোন এসিডের Ka = 5.5 × 10⁻²?",
+          options: {
+            A: "HNO₃",
+            B: "H₃PO₄",
+            C: "HClO₄",
+            D: "H₂SO₄",
+          },
+          correct: "A",
+          explanation:
+            "<p>প্রদত্ত Ka মানটি একটি মধ্যম শক্তিশালী এসিডের জন্য নির্দেশক। HNO₃ একটি শক্তিশালী এসিড হলেও, এটি সম্পূর্ণরূপে বিয়োজিত হয় না যতটা H₂SO₄ বা HClO₄ হয়। H₃PO₄ একটি মধ্যম শক্তিশালী এসিড, কিন্তু তার প্রথম Ka (Ka₁) সাধারণত 7.5 × 10⁻³ এর কাছাকাছি। 5.5 × 10⁻² মানটি নাইট্রিক এসিডের (HNO₃) জন্য সাধারণত ব্যবহৃত একটি Ka মান (যদিও এটিকে প্রায়শই তীব্র এসিড হিসেবে ধরা হয় এবং এর Ka মান অনেক বড় হয়)। অন্যান্য বিকল্পগুলি (H₂SO₄, HClO₄) অত্যন্ত শক্তিশালী এসিড যাদের Ka মান অনেক বেশি (>1)। তাই, এই প্রদত্ত বিকল্পগুলির মধ্যে HNO₃ সবচেয়ে সামঞ্জস্যপূর্ণ।</p>",
+        },
+        {
+          id: 7,
+          question: "নিচের কোনটি দুর্বলতম এসিড?",
+          options: {
+            A: "HMnO₄",
+            B: "H₂SO₄",
+            C: "HClO₄",
+            D: "HNO₃",
+          },
+          correct: "D",
+          explanation:
+            "<p>প্রদত্ত বিকল্পগুলির মধ্যে HClO₄ (পারক্লোরিক এসিড) সবচেয়ে শক্তিশালী এসিড। H₂SO₄ (সালফিউরিক এসিড) এবং HMnO₄ (পারম্যাঙ্গানিক এসিড) উভয়ই অত্যন্ত শক্তিশালী এসিড। HNO₃ (নাইট্রিক এসিড) শক্তিশালী এসিড হলেও, এই তালিকার অন্যান্যগুলির তুলনায় এটি সবচেয়ে দুর্বল।</p>",
+        },
+        {
+          id: 8,
+          question: "কোনটি অনুবন্ধী অম্ল-ক্ষারক যুগল?",
+          options: {
+            A: "HCl, NaOH",
+            B: "H₃O⁺, H₂O",
+            C: "O₂, H₂O",
+            D: "H⁺, Cl⁻",
+          },
+          correct: "B",
+          explanation:
+            "<p>অনুযোগী অম্ল-ক্ষারক যুগল (conjugate acid-base pair) হলো এমন দুটি প্রজাতি যা একটি প্রোটন (H⁺) দ্বারা একে অপরের থেকে ভিন্ন হয়। একটি এসিড প্রোটন ত্যাগ করে তার অনুবন্ধী ক্ষারকে পরিণত হয়, এবং একটি ক্ষারক প্রোটন গ্রহণ করে তার অনুবন্ধী এসিডে পরিণত হয়। H₃O⁺ (হাইড্রোনিয়াম আয়ন) হলো H₂O (পানি) এর অনুবন্ধী অম্ল, এবং H₂O হলো H₃O⁺ এর অনুবন্ধী ক্ষারক। HCl এবং NaOH হলো একটি এসিড ও ক্ষারকের সাধারণ জোড়, কিন্তু অনুবন্ধী যুগল নয়।</p>",
+        },
+        {
+          id: 9,
+          question: "NH₃ যৌগের অনুবন্ধী অম্ল কোনটি?",
+          options: {
+            A: "NH₄⁺",
+            B: "NH₂⁻",
+            C: "NH₄OH",
+            D: "NH₂⁻",
+          },
+          correct: "A",
+          explanation:
+            "<p>অ্যামোনিয়া (NH₃) একটি ক্ষার, যা একটি প্রোটন (H⁺) গ্রহণ করে তার অনুবন্ধী অম্ল NH₄⁺ (অ্যামোনিয়াম আয়ন) এ পরিণত হয়।</p>",
+        },
+        {
+          id: 10,
+          question: "H₃PO₂ এর ক্ষারকত্ব কত?",
+          options: {
+            A: "1",
+            B: "2",
+            C: "3",
+            D: "4",
+          },
+          correct: "A",
+          explanation:
+            "<p>এসিডের ক্ষারকত্ব (basicity) বলতে বোঝায় যে একটি এসিড কতটি H⁺ আয়ন (প্রোটন) ত্যাগ করতে পারে। H₃PO₂ (হাইপোফসফরাস এসিড) এর গঠনগত বৈশিষ্ট্য হলো, এতে শুধুমাত্র একটি হাইড্রোজেন পরমাণু অক্সিজেন পরমাণুর সাথে যুক্ত থাকে (P-OH বন্ধন) এবং বাকি দুটি হাইড্রোজেন পরমাণু সরাসরি ফসফরাস পরমাণুর সাথে যুক্ত থাকে (P-H বন্ধন)। শুধুমাত্র P-OH বন্ধনের হাইড্রোজেনই বিয়োজিত হতে পারে। তাই H₃PO₂ এর ক্ষারকত্ব 1।</p>",
+        },
+        {
+          id: 11,
+          question: "Al₂O₃ এর অম্লত্ব নিচের কোনটি সঠিক?",
+          options: {
+            A: "2",
+            B: "3",
+            C: "5",
+            D: "6",
+          },
+          correct: "D",
+          explanation:
+            "<p>একটি অক্সাইডের অম্লত্ব (acidity) বলতে বোঝায় যে এটি কতটি OH⁻ আয়ন গ্রহণ করতে পারে বা কতটি H⁺ আয়ন উৎপন্ন করতে পারে। Al₂O₃ (অ্যালুমিনিয়াম অক্সাইড) একটি উভধর্মী অক্সাইড, যা এসিড এবং ক্ষারক উভয় হিসেবেই কাজ করতে পারে। এর অম্লত্ব সাধারণত মেটাল আয়নের চার্জ বা অক্সাইড প্রতি অক্সিজেন সংখ্যা দ্বারা নির্ধারিত হয়। সাধারণত, M₂O₃ শ্রেণীর অক্সাইডের অম্লত্ব 6 ধরা হয়, যা এর জারণ অবস্থা এবং সমন্বয় সংখ্যার সাথে সম্পর্কিত।</p>",
+        },
+        {
+          id: 12,
+          question: "HSO₄⁻ এর অনুবন্ধী এসিড কোনটি?",
+          options: {
+            A: "H₂SO₄",
+            B: "H₂SO₃",
+            C: "SO₃²⁻",
+            D: "HSO₃⁻",
+          },
+          correct: "A",
+          explanation:
+            "<p>HSO₄⁻ (হাইড্রোজেন সালফেট আয়ন) একটি প্রোটন (H⁺) গ্রহণ করে তার অনুবন্ধী এসিড H₂SO₄ (সালফিউরিক এসিড) এ পরিণত হয়।</p>",
+        },
+        {
+          id: 13,
+          question: "HSO₄⁻ আয়নের অনুবন্ধী ক্ষারক কোনটি?",
+          options: {
+            A: "H₂SO₄",
+            B: "SO₃²⁻",
+            C: "SO₄²⁻",
+            D: "HSO₃⁻",
+          },
+          correct: "C",
+          explanation:
+            "<p>HSO₄⁻ (হাইড্রোজেন সালফেট আয়ন) একটি প্রোটন (H⁺) ত্যাগ করে তার অনুবন্ধী ক্ষারক SO₄²⁻ (সালফেট আয়ন) এ পরিণত হয়।</p>",
+        },
+        {
+          id: 14,
+          question: "নিচের কোনটি উভধর্মী?",
+          options: {
+            A: "NH₃",
+            B: "HCO₃⁻",
+            C: "H₃O⁺",
+            D: "CO₃²⁻",
+          },
+          correct: "B",
+          explanation:
+            "<p>উভধর্মী (amphoteric) প্রজাতি বা অণু হলো এমন একটি প্রজাতি যা এসিড এবং ক্ষারক উভয় হিসেবেই আচরণ করতে পারে। HCO₃⁻ (বাইকার্বনেট আয়ন) উভধর্মী, কারণ এটি একটি প্রোটন ত্যাগ করে CO₃²⁻ হতে পারে (ক্ষারক হিসেবে কাজ করে), অথবা একটি প্রোটন গ্রহণ করে H₂CO₃ হতে পারে (এসিড হিসেবে কাজ করে)।</p><ul><li>HCO₃⁻ (aq) + H₂O (l) ⇌ CO₃²⁻ (aq) + H₃O⁺ (aq) (HCO₃⁻ এসিড হিসেবে)</li><li>HCO₃⁻ (aq) + H₂O (l) ⇌ H₂CO₃ (aq) + OH⁻ (aq) (HCO₃⁻ ক্ষারক হিসেবে)</li></ul>",
+        },
+        {
+          id: 15,
+          question: "নিচের কোনটি উভধর্মী যৌগ?",
+          options: {
+            A: "NH₃",
+            B: "HCl",
+            C: "H₂O",
+            D: "H₂SO₄",
+          },
+          correct: "C",
+          explanation:
+            "<p>উভধর্মী যৌগ হলো এমন যৌগ যা এসিড এবং ক্ষারক উভয় হিসেবেই আচরণ করতে পারে। পানি (H₂O) উভধর্মী, কারণ এটি প্রোটন ত্যাগ করে OH⁻ (ক্ষারক) হতে পারে অথবা প্রোটন গ্রহণ করে H₃O⁺ (এসিড) হতে পারে।</p><ul><li>H₂O + H₂O ⇌ H₃O⁺ + OH⁻</li></ul>",
+        },
+        {
+          id: 16,
+          question: "কোনটি অ্যাম্পিপ্রোটিক প্রজাতি/উভধর্মী?",
+          options: {
+            A: "H₃PO₄",
+            B: "H₃O⁺",
+            C: "H₂SO₄",
+            D: "HSO₄⁻",
+          },
+          correct: "D",
+          explanation:
+            "<p>অ্যাম্পিপ্রোটিক প্রজাতি হলো এমন প্রজাতি যা প্রোটন দান করতে পারে এবং প্রোটন গ্রহণও করতে পারে। HSO₄⁻ (হাইড্রোজেন সালফেট আয়ন) অ্যাম্পিপ্রোটিক, কারণ এটি একটি প্রোটন ত্যাগ করে SO₄²⁻ হতে পারে (এসিড হিসেবে) অথবা একটি প্রোটন গ্রহণ করে H₂SO₄ হতে পারে (ক্ষারক হিসেবে)।</p>",
+        },
+        {
+          id: 17,
+          question: "নিচের কোনটি HCl এসিডের বিয়োজন ধ্রুবক (25°C-এ)?",
+          options: {
+            A: "2.5 × 10⁷",
+            B: "3.0 × 10⁻²",
+            C: "1.4 × 10⁻²",
+            D: "7.3 × 10⁻³",
+          },
+          correct: "A",
+          explanation:
+            "<p>HCl একটি অত্যন্ত শক্তিশালী এসিড, যা জলীয় দ্রবণে প্রায় সম্পূর্ণরূপে বিয়োজিত হয়। এর বিয়োজন ধ্রুবক (Ka) এর মান অত্যন্ত বড় হয়। প্রদত্ত বিকল্পগুলির মধ্যে 2.5 × 10⁷ হলো সবচেয়ে বড় মান, যা একটি তীব্র এসিডের Ka মানের সাথে সঙ্গতিপূর্ণ।</p>",
+        },
+        {
+          id: 18,
+          question: "সবচেয়ে দুর্বল এসিড কোনটি?",
+          options: {
+            A: "H₃BO₃",
+            B: "H₂SO₃",
+            C: "H₂SO₄",
+            D: "HIO₄",
+          },
+          correct: "A",
+          explanation:
+            "<p>প্রদত্ত এসিডগুলির মধ্যে H₃BO₃ (বোরিক এসিড) হলো সবচেয়ে দুর্বল এসিড। এটি একটি লুইস এসিড, যা সরাসরি প্রোটন ত্যাগ করে না বরং পানির অণু থেকে OH⁻ গ্রহণ করে। H₂SO₃ (সালফিউরাস এসিড) মধ্যম শক্তিশালী, H₂SO₄ (সালফিউরিক এসিড) শক্তিশালী, এবং HIO₄ (পারআয়োডিক এসিড) তুলনামূলকভাবে শক্তিশালী।</p>",
+        },
+        {
+          id: 19,
+          question: "M₂O₃ অক্সাইডটির ক্ষারকত্ব কত?",
+          options: {
+            A: "2",
+            B: "3",
+            C: "6",
+            D: "8",
+          },
+          correct: "C",
+          explanation:
+            "<p>একটি ধাতব অক্সাইডের ক্ষারকত্ব বলতে বোঝায় যে এটি কতটি H⁺ আয়ন গ্রহণ করতে পারে বা কতটি OH⁻ আয়ন উৎপন্ন করতে পারে। M₂O₃ এর একটি অণুতে 3টি অক্সিজেন পরমাণু রয়েছে, যা 6টি H⁺ গ্রহণ করতে পারে। সুতরাং, এর ক্ষারকত্ব 6।</p>",
+        },
+        {
+          id: 20,
+          question: "কোনটি দ্রবণে বেশি পরিমাণে বিয়োজিত হবে?",
+          options: {
+            A: "HBrO₄",
+            B: "HClO₄",
+            C: "H₂SO₄",
+            D: "HNO₃",
+          },
+          correct: "B",
+          explanation:
+            "<p>এসিডের তীব্রতা যত বেশি হয়, জলীয় দ্রবণে তার বিয়োজন তত বেশি হয়। অক্সিএসিডের তীব্রতা কেন্দ্রীয় পরমাণুর ইলেকট্রোনেগেটিভিটি এবং অক্সিজেন পরমাণুর সংখ্যা বৃদ্ধির সাথে বৃদ্ধি পায়। প্রদত্ত বিকল্পগুলির মধ্যে HClO₄ (পারক্লোরিক এসিড) সবচেয়ে শক্তিশালী এসিড।</p>",
+        },
+        {
+          id: 21,
+          question: "HSO₄⁻ এর ক্ষেত্রে কোনটি সঠিক?",
+          options: {
+            A: "এর অনুবন্ধী ক্ষার SO₄²⁻",
+            B: "এর অনুবন্ধী ক্ষার H₂SO₄",
+            C: "এর অনুবন্ধী অম্ল H₃O⁺",
+            D: "এর অনুবন্ধী অম্ল SO₄²⁻",
+          },
+          correct: "A",
+          explanation:
+            "<p>HSO₄⁻ (হাইড্রোজেন সালফেট আয়ন) একটি প্রোটন (H⁺) ত্যাগ করে তার অনুবন্ধী ক্ষারক SO₄²⁻ (সালফেট আয়ন) এ পরিণত হয়।</p>",
+        },
+        {
+          id: 22,
+          question: "হাইড্রাসিডসমূহের তীব্রতা কিসের উপর নির্ভর করে?",
+          options: {
+            A: "কেন্দ্রীয় পরমাণুর জারণ সংখ্যা",
+            B: "কেন্দ্রীয় পরমাণুর চার্জ ঘনত্ব",
+            C: "অ্যানায়নের আকার",
+            D: "ক্যাটায়নের আকার",
+          },
+          correct: "C",
+          explanation:
+            "<p>হাইড্রাসিডসমূহের (যেমন HF, HCl, HBr, HI) তীব্রতা প্রধানত কেন্দ্রীয় পরমাণু (হ্যালাইড আয়ন) এর আকার এবং H-X বন্ধনের শক্তির উপর নির্ভর করে। অ্যানায়নের আকার যত বড় হয় (উদাহরণস্বরূপ, F⁻ থেকে I⁻), H-X বন্ধন তত দুর্বল হয়, এবং এসিড তত বেশি শক্তিশালী হয় কারণ H⁺ আয়ন সহজে ত্যাগ করতে পারে।</p>",
+        },
+        {
+          id: 23,
+          question: "নিচের কোনটি সর্বাধিক তীব্র/শক্তিশালী এসিড?",
+          options: {
+            A: "HCl",
+            B: "HBr",
+            C: "HF",
+            D: "HI",
+          },
+          correct: "D",
+          explanation:
+            "<p>হাইড্রাসিডগুলির তীব্রতা H-X বন্ধনের শক্তির উপর নির্ভর করে, যা X এর আকারের সাথে হ্রাস পায়। F এর চেয়ে Cl, Br, I এর আকার বড়। তাই H-I বন্ধন সবচেয়ে দুর্বল এবং HI সবচেয়ে শক্তিশালী এসিড। তীব্রতার ক্রম: HI &gt; HBr &gt; HCl &gt; HF।</p>",
+        },
+        {
+          id: 24,
+          question: "HCO₃⁻ এর অনুবন্ধী ক্ষারক কোনটি?",
+          options: {
+            A: "H₂CO₃",
+            B: "CO₃²⁻",
+            C: "CO₂",
+            D: "H⁺",
+          },
+          correct: "B",
+          explanation:
+            "<p>HCO₃⁻ (বাইকার্বনেট আয়ন) একটি প্রোটন (H⁺) ত্যাগ করে তার অনুবন্ধী ক্ষারক CO₃²⁻ (কার্বনেট আয়ন) এ পরিণত হয়।</p>",
+        },
+        {
+          id: 25,
+          question: "এসিডিটির তীব্রতার সঠিক ক্রম কোনটি?",
+          options: {
+            A: "H₂SO₄ > H₃PO₄ > HClO₄ > HBrO₄",
+            B: "HClO₄ > HBrO₄ > H₂SO₄ > H₃PO₄",
+            C: "H₃PO₄ > H₂SO₄ > HBrO₄ > HClO₄",
+            D: "HBrO₄ > HClO₄ > H₃PO₄ > H₂SO₄",
+          },
+          correct: "B",
+          explanation:
+            "<p>অক্সিএসিডের তীব্রতা সাধারণত কেন্দ্রীয় পরমাণুর তড়িৎ ঋণাত্মকতা এবং অক্সিজেন পরমাণুর সংখ্যা বৃদ্ধির সাথে বৃদ্ধি পায়। প্রদত্ত এসিডগুলির মধ্যে HClO₄ (পারক্লোরিক এসিড) সবচেয়ে শক্তিশালী। তারপর HBrO₄ (পারব্রোমিক এসিড), H₂SO₄ (সালফিউরিক এসিড) এবং H₃PO₄ (ফসফরিক এসিড) তীব্রতা ক্রমানুসারে সাজানো হয়েছে।</p><p>ক্রম: HClO₄ &gt; HBrO₄ &gt; H₂SO₄ &gt; H₃PO₄।</p>",
+        },
+        {
+          id: 26,
+          question: "কোনটি শক্তিশালী এসিড?",
+          options: {
+            A: "HNO₂",
+            B: "HNO₃",
+            C: "H₂SO₃",
+            D: "H₂SO₄",
+          },
+          correct: "D",
+          explanation:
+            "<p>HNO₃ (নাইট্রিক এসিড) এবং H₂SO₄ (সালফিউরিক এসিড) উভয়ই শক্তিশালী এসিড। তবে, H₂SO₄ এর বিয়োজন ধ্রুবকের প্রথম মান (Ka₁) অনেক বেশি এবং এটি HNO₃ এর চেয়ে শক্তিশালী হিসেবে বিবেচিত। HNO₂ (নাইট্রাস এসিড) এবং H₂SO₃ (সালফিউরাস এসিড) দুর্বল এসিড।</p>",
+        },
+        {
+          id: 27,
+          question: "SO₂ এর ক্ষারকত্ব কত?",
+          options: {
+            A: "2",
+            B: "3",
+            C: "4",
+            D: "5",
+          },
+          correct: "A",
+          explanation:
+            "<p>SO₂ (সালফার ডাইঅক্সাইড) একটি অম্লীয় অক্সাইড। এটি পানির সাথে বিক্রিয়া করে H₂SO₃ (সালফিউরাস এসিড) উৎপন্ন করে। H₂SO₃ একটি দ্বিক্ষারকীয় এসিড, অর্থাৎ এটি দুটি H⁺ আয়ন ত্যাগ করতে পারে। তাই, SO₂ এর ক্ষারকত্ব 2।</p><p>SO₂ + H₂O → H₂SO₃</p>",
+        },
+        {
+          id: 28,
+          question: "নিচের কোন এসিডটি সবচেয়ে বেশি তীব্র এসিড হবে?",
+          options: {
+            A: "H₂CO₃",
+            B: "HNO₃",
+            C: "H₂SO₄",
+            D: "HClO₄",
+          },
+          correct: "D",
+          explanation:
+            "<p>প্রদত্ত এসিডগুলির মধ্যে HClO₄ (পারক্লোরিক এসিড) হলো সবচেয়ে শক্তিশালী এসিড। এটি অক্সিজেন পরমাণুর উচ্চ জারণ সংখ্যা এবং কেন্দ্রীয় পরমাণুর উচ্চ তড়িৎ ঋণাত্মকতার কারণে হয়ে থাকে।</p>",
+        },
+        {
+          id: 29,
+          question: "নিচের কোন এসিডের তীব্রতা বেশি?",
+          options: {
+            A: "H₂SeO₃",
+            B: "H₂SO₄",
+            C: "HClO₄",
+            D: "HIO₄",
+          },
+          correct: "C",
+          explanation:
+            "<p>প্রদত্ত এসিডগুলির মধ্যে HClO₄ (পারক্লোরিক এসিড) সবচেয়ে শক্তিশালী। অক্সিএসিডের তীব্রতা কেন্দ্রীয় পরমাণুর তড়িৎ ঋণাত্মকতা এবং অক্সিজেন পরমাণুর সংখ্যা বৃদ্ধির সাথে বৃদ্ধি পায়।</p>",
+        },
+        {
+          id: 30,
+          question: "অক্সি এসিডসমূহের কোনটির তীব্রতা বেশি?",
+          options: {
+            A: "HNO₃",
+            B: "HClO₃",
+            C: "H₂SO₃",
+            D: "H₃PO₄",
+          },
+          correct: "A",
+          explanation:
+            "<p>অক্সিএসিডের তীব্রতা দুটি প্রধান কারণের উপর নির্ভর করে: কেন্দ্রীয় পরমাণুর ইলেকট্রোনেগেটিভিটি এবং কেন্দ্রীয় পরমাণুর সাথে সংযুক্ত অক্সিজেন পরমাণুর সংখ্যা (যা জারণ সংখ্যাকে প্রভাবিত করে)। HNO₃ (নাইট্রিক এসিড) প্রদত্ত বিকল্পগুলির মধ্যে সবচেয়ে শক্তিশালী। HClO₃ (ক্লোরিক এসিড) শক্তিশালী হলেও, HNO₃ এর চেয়ে কম তীব্র। H₂SO₃ (সালফিউরাস এসিড) এবং H₃PO₄ (ফসফরিক এসিড) দুর্বল এসিড।</p>",
+        },
+        {
+          id: 31,
+          question: "Fe₂O₃ এর অম্লত্ব কত?",
+          options: {
+            A: "2",
+            B: "3",
+            C: "6",
+            D: "4",
+          },
+          correct: "C",
+          explanation:
+            "<p>একটি অক্সাইডের অম্লত্ব বলতে বোঝায় যে এটি কতটি OH⁻ আয়ন গ্রহণ করতে পারে। Fe₂O₃ (আয়রন (III) অক্সাইড) একটি উভধর্মী অক্সাইড, তবে এর ক্ষারকীয় বৈশিষ্ট্য বেশি। এর অম্লত্ব 6 ধরা হয়, কারণ 2টি Fe³⁺ আয়ন 6টি OH⁻ আয়ন গ্রহণ করতে পারে (2Fe³⁺ + 6OH⁻ → 2Fe(OH)₃)।</p>",
+        },
+        {
+          id: 32,
+          question: "H₂O এর অনুবন্ধী এসিড কী?",
+          options: {
+            A: "H₃O⁺",
+            B: "HCl",
+            C: "OH⁻",
+            D: "Cl⁻",
+          },
+          correct: "A",
+          explanation:
+            "<p>একটি অনুবন্ধী এসিড ক্ষারক থেকে একটি প্রোটন (H⁺) গ্রহণ করে গঠিত হয়। H₂O একটি ক্ষারক হিসেবে কাজ করে যখন এটি একটি প্রোটন গ্রহণ করে H₃O⁺ (হাইড্রোনিয়াম আয়ন) এ পরিণত হয়।</p>",
+        },
+        {
+          id: 33,
+          question: "H₂O এর অনুবন্ধী ক্ষারক কী?",
+          options: {
+            A: "H₃O⁺",
+            B: "H₂O",
+            C: "OH⁻",
+            D: "O₂",
+          },
+          correct: "C",
+          explanation:
+            "<p>একটি অনুবন্ধী ক্ষারক এসিড থেকে একটি প্রোটন (H⁺) ত্যাগ করে গঠিত হয়। H₂O একটি এসিড হিসেবে কাজ করে যখন এটি একটি প্রোটন ত্যাগ করে OH⁻ (হাইড্রোক্সাইড আয়ন) এ পরিণত হয়।</p>",
+        },
+        {
+          id: 34,
+          question: "CaO এর অম্লত্ব কত?",
+          options: {
+            A: "1.0",
+            B: "2.0",
+            C: "4.0",
+            D: "6.0",
+          },
+          correct: "B",
+          explanation:
+            "<p>CaO (ক্যালসিয়াম অক্সাইড) একটি ক্ষারীয় অক্সাইড। এটি পানির সাথে বিক্রিয়া করে Ca(OH)₂ (ক্যালসিয়াম হাইড্রোক্সাইড) উৎপন্ন করে, যা একটি দ্বিক্ষারকীয় ক্ষার। সুতরাং, CaO এর অম্লত্ব 2, কারণ এটি দুটি H⁺ আয়ন গ্রহণ করতে পারে।</p>",
+        },
+        {
+          id: 35,
+          question: "OH⁻ এর অনুবন্ধী এসিড কোনটি?",
+          options: {
+            A: "H₃O⁺",
+            B: "H₂O",
+            C: "O²⁻",
+            D: "H₂SO₄",
+          },
+          correct: "B",
+          explanation:
+            "<p>OH⁻ (হাইড্রোক্সাইড আয়ন) একটি ক্ষারক। এটি একটি প্রোটন (H⁺) গ্রহণ করে তার অনুবন্ধী এসিড H₂O (পানি) এ পরিণত হয়।</p>",
+        },
+        {
+          id: 36,
+          question: "Al₂O₃ এর ক্ষারকত্ব কত?",
+          options: {
+            A: "2",
+            B: "3",
+            C: "4",
+            D: "1",
+          },
+          correct: "A",
+          explanation:
+            "<p>Al₂O₃ (অ্যালুমিনিয়াম অক্সাইড) একটি উভধর্মী অক্সাইড, যা এসিড এবং ক্ষারক উভয় হিসেবেই কাজ করতে পারে। এটি ক্ষার হিসেবে কাজ করলে দুটি H⁺ আয়ন গ্রহণ করে (2Al³⁺ + 2H⁺ → 2Al(OH)₃) অথবা এর প্রতি মোল Al₂O₃ দুটি এসিড অণুর সাথে বিক্রিয়া করতে পারে। সাধারণত, এর ক্ষারকত্ব 2 ধরা হয়।</p>",
+        },
+        {
+          id: 37,
+          question: "নিচের কোন এসিডের Ka এর মান সবচেয়ে বেশি?",
+          options: {
+            A: "H₂SO₄",
+            B: "H₃PO₃",
+            C: "HNO₃",
+            D: "H₃BO₃",
+          },
+          correct: "A",
+          explanation:
+            "<p>Ka এর মান যত বেশি হবে, এসিড তত বেশি শক্তিশালী হবে। H₂SO₄ (সালফিউরিক এসিড) একটি অত্যন্ত শক্তিশালী এসিড, যার Ka1 এর মান অনেক বড় (প্রায় অসীম)। HNO₃ (নাইট্রিক এসিড) ও শক্তিশালী, তবে H₂SO₄ এর চেয়ে কম। H₃PO₃ (ফসফরাস এসিড) মধ্যম শক্তিশালী এবং H₃BO₃ (বোরিক এসিড) একটি দুর্বল এসিড।</p>",
+        },
+        {
+          id: 38,
+          question: "কোন যৌগটির জলীয় দ্রবণের pH মান সর্বোচ্চ?",
+          options: {
+            A: "KNO₃",
+            B: "NH₄Cl",
+            C: "NaHCO₃",
+            D: "Na₂CO₃",
+          },
+          correct: "D",
+          explanation:
+            "<p>দ্রবণের pH মান যৌগটির প্রকৃতির উপর নির্ভর করে:</p><ul><li>KNO₃: এটি একটি তীব্র এসিড (HNO₃) এবং তীব্র ক্ষারক (KOH) থেকে গঠিত লবণ, তাই এর জলীয় দ্রবণ নিরপেক্ষ (pH ≈ 7)।</li><li>NH₄Cl: এটি একটি দুর্বল ক্ষারক (NH₄OH) এবং তীব্র এসিড (HCl) থেকে গঠিত লবণ, তাই এর জলীয় দ্রবণ অম্লীয় (pH &lt; 7)।</li><li>NaHCO₃ (সোডিয়াম বাইকার্বনেট): এটি একটি তীব্র ক্ষারক (NaOH) এবং একটি দুর্বল দ্বিক্ষারকীয় এসিড (H₂CO₃) এর মধ্যবর্তী লবণ। এর দ্রবণ সামান্য ক্ষারীয় (pH ≈ 8-9)।</li><li>Na₂CO₃ (সোডিয়াম কার্বনেট): এটি একটি তীব্র ক্ষারক (NaOH) এবং একটি দুর্বল দ্বিক্ষারকীয় এসিড (H₂CO₃) থেকে গঠিত লবণ। এটি জলীয় দ্রবণে তীব্রভাবে হাইড্রোলাইজ করে এবং OH⁻ আয়ন উৎপন্ন করে, যার ফলে দ্রবণটি শক্তিশালী ক্ষারীয় হয় (pH &gt; 7)।</li></ul><p>সুতরাং, Na₂CO₃ এর জলীয় দ্রবণের pH মান সর্বোচ্চ হবে।</p>",
+        },
+        {
+          id: 39,
+          question: "নিচের কোনটির প্রোটন আসক্তি সবচেয়ে বেশি?",
+          options: {
+            A: "H₂O",
+            B: "H₂S",
+            C: "NH₃",
+            D: "PH₃",
+          },
+          correct: "C",
+          explanation:
+            "<p>প্রোটন আসক্তি (proton affinity) হলো একটি অণু বা আয়নের প্রোটন (H⁺) গ্রহণ করার ক্ষমতা। ব্রনস্টেড-লাউরি তত্ত্ব অনুসারে, একটি শক্তিশালী ক্ষারকের প্রোটন আসক্তি বেশি হয়। প্রদত্ত বিকল্পগুলির মধ্যে NH₃ (অ্যামোনিয়া) একটি শক্তিশালী ক্ষারক। H₂O, H₂S, এবং PH₃ এর চেয়ে NH₃ এর প্রোটন আসক্তি অনেক বেশি।</p>",
+        },
+        {
+          id: 40,
+          question:
+            "H₂SO₄, H₃PO₄, H₃PO₃, H₃PO₂, H₂CO₃, H₃BO₃, H₂CrO₄, H₂SO₃ ও H₂S₂O₇ এ এসিডগুলোর মধ্যে দ্বিক্ষারকীয় এসিডের সংখ্যা-",
+          options: {
+            A: "4",
+            B: "6",
+            C: "7",
+            D: "8",
+          },
+          correct: "B",
+          explanation:
+            "<p>দ্বিক্ষারকীয় এসিড হলো যারা দুটি H⁺ আয়ন ত্যাগ করতে পারে।</p><ul><li>H₂SO₄ (সালফিউরিক এসিড): দ্বিক্ষারকীয়</li><li>H₃PO₄ (ফসফরিক এসিড): ত্রিক্ষারকীয়</li><li>H₃PO₃ (ফসফরাস এসিড): দ্বিক্ষারকীয় (যদিও 3টি H আছে, 2টি বিয়োজিত হয়)</li><li>H₃PO₂ (হাইপোফসফরাস এসিড): একক ক্ষারকীয় (1টি বিয়োজিত হয়)</li><li>H₂CO₃ (কার্বনিক এসিড): দ্বিক্ষারকীয়</li><li>H₃BO₃ (বোরিক এসিড): একক ক্ষারকীয় (লুইস এসিড হিসেবে)</li><li>H₂CrO₄ (ক্রোমিক এসিড): দ্বিক্ষারকীয়</li><li>H₂SO₃ (সালফিউরাস এসিড): দ্বিক্ষারকীয়</li><li>H₂S₂O₇ (পাইরোসালফিউরিক এসিড): দ্বিক্ষারকীয়</li></ul><p>সুতরাং, দ্বিক্ষারকীয় এসিডগুলো হলো: H₂SO₄, H₃PO₃, H₂CO₃, H₂CrO₄, H₂SO₃, H₂S₂O₇। মোট সংখ্যা 6টি।</p>",
+        },
+        {
+          id: 41,
+          question: "কোনটি দ্বি-ক্ষারকীয় এসিড?",
+          options: {
+            A: "H₂CO₃",
+            B: "H₃PO₃",
+            C: "H₃PO₂",
+            D: "HNO₃",
+          },
+          correct: "A",
+          explanation:
+            "<p>দ্বি-ক্ষারকীয় এসিড হলো যা দুটি H⁺ আয়ন ত্যাগ করতে পারে।</p><ul><li>H₂CO₃ (কার্বনিক এসিড): দুটি H⁺ আয়ন ত্যাগ করে (H₂CO₃ ⇌ H⁺ + HCO₃⁻ ⇌ 2H⁺ + CO₃²⁻)। এটি দ্বি-ক্ষারকীয়।</li><li>H₃PO₃ (ফসফরাস এসিড): যদিও 3টি H আছে, শুধুমাত্র 2টি বিয়োজিত হয়, তাই এটি দ্বি-ক্ষারকীয়।</li><li>H₃PO₂ (হাইপোফসফরাস এসিড): 1টি H⁺ আয়ন ত্যাগ করে, তাই এটি একক ক্ষারকীয়।</li><li>HNO₃ (নাইট্রিক এসিড): 1টি H⁺ আয়ন ত্যাগ করে, তাই এটি একক ক্ষারকীয়।</li></ul><p>প্রদত্ত বিকল্পগুলির মধ্যে, H₂CO₃ স্পষ্টভাবে দ্বি-ক্ষারকীয়। H₃PO₃ ও দ্বি-ক্ষারকীয়, কিন্তু বিকল্পে শুধুমাত্র একটি সঠিক উত্তরের কথা বলা হয়েছে। যদি একাধিক সঠিক উত্তর সম্ভব হয়, তাহলে H₃PO₃ ও সঠিক হতো। প্রশ্ন অনুসারে A উত্তর করা হয়েছে।</p>",
+        },
+        {
+          id: 42,
+          question: "কোনটি সবচেয়ে শক্তিশালী ক্ষার?",
+          options: {
+            A: "NaOH",
+            B: "KOH",
+            C: "LiOH",
+            D: "CsOH",
+          },
+          correct: "D",
+          explanation:
+            "<p>গ্রুপ 1 (ক্ষার ধাতু) এর হাইড্রোক্সাইডগুলি অত্যন্ত শক্তিশালী ক্ষারক। ক্ষারকের শক্তি গ্রুপের নিচে যাওয়ার সাথে সাথে বৃদ্ধি পায়, কারণ ধাতব আয়নের আকার বৃদ্ধি পায় এবং OH⁻ আয়নকে আরও সহজে ত্যাগ করতে পারে। তাই, LiOH &lt; NaOH &lt; KOH &lt; RbOH &lt; CsOH। এদের মধ্যে CsOH (সিজিয়াম হাইড্রোক্সাইড) সবচেয়ে শক্তিশালী ক্ষার।</p>",
+        },
+        {
+          id: 43,
+          question:
+            "NH₄OH দুর্বল ক্ষার। এটি আরো দুর্বল হয় নিচের কোনটির উপস্থিতিতে?",
+          options: {
+            A: "0.01M H₂SO₄",
+            B: "0.1M HCl",
+            C: "0.1M CH₃COOH",
+            D: "0.1M NH₄Cl",
+          },
+          correct: "D",
+          explanation:
+            "<p>দুর্বল ক্ষার (NH₄OH) এর বিয়োজন (NH₄OH ⇌ NH₄⁺ + OH⁻)। যদি NH₄Cl (অ্যামোনিয়াম ক্লোরাইড) যোগ করা হয়, তবে এটি NH₄⁺ আয়ন উৎপন্ন করে। সাধারণ আয়ন প্রভাব (common ion effect) অনুসারে, NH₄⁺ আয়নের ঘনমাত্রা বৃদ্ধি পাওয়ায় সাম্যাবস্থা বাম দিকে সরে যায়, যার ফলে NH₄OH এর বিয়োজন আরও হ্রাস পায় এবং ক্ষারকের শক্তি আরও দুর্বল হয়।</p>",
+        },
+        {
+          id: 44,
+          question:
+            "যে প্রশমন বিক্রিয়াটিতে আরহেনিয়াসের সূত্র অনুসৃত হয়েছে তা হলো-",
+          options: {
+            A: "NH₃ (g) + HCl (g) = NH₄Cl (g)",
+            B: "CaO (s) + CO₂ (g) = CaCO₃ (s)",
+            C: "NH₄OH (aq) + HCl (aq) = NH₄Cl (aq) + H₂O (l)",
+            D: "FeO (s) + HCl (aq) = FeCl₂ (aq) + H₂O (l)",
+          },
+          correct: "C",
+          explanation:
+            "<p>আরহেনিয়াসের সূত্র অনুসারে, এসিড হলো যে পদার্থ জলীয় দ্রবণে H⁺ আয়ন উৎপন্ন করে এবং ক্ষারক হলো যে পদার্থ জলীয় দ্রবণে OH⁻ আয়ন উৎপন্ন করে। প্রশমন বিক্রিয়া হলো H⁺ এবং OH⁻ আয়নের বিক্রিয়া যা পানি উৎপন্ন করে।</p><p>বিকল্প (C) তে, NH₄OH (aq) (জলীয় দ্রবণে OH⁻ আয়ন দেয়) এবং HCl (aq) (জলীয় দ্রবণে H⁺ আয়ন দেয়) এর বিক্রিয়ায় পানি উৎপন্ন হয়। এটি আরহেনিয়াসের সূত্র দ্বারা ব্যাখ্যা করা প্রশমন বিক্রিয়া।</p>",
+        },
+        {
+          id: 45,
+          question: "নিচের কোনটি লুইস এসিড?",
+          options: {
+            A: "H⁺",
+            B: "NH₃",
+            C: "Cl⁻",
+            D: "H₂O",
+          },
+          correct: "A",
+          explanation:
+            "<p>লুইস এসিড হলো এমন প্রজাতি যা ইলেকট্রন জোড় গ্রহণ করতে পারে। H⁺ (প্রোটন) এর একটি ইলেকট্রন জোড় গ্রহণ করার ক্ষমতা আছে কারণ এর একটি খালি অরবিটাল আছে। NH₃ এবং H₂O হলো লুইস ক্ষারক (ইলেকট্রন জোড় দাতা), এবং Cl⁻ একটি লুইস ক্ষারক (ইলেকট্রন জোড় দাতা)।</p>",
+        },
+        {
+          id: 46,
+          question: "নিম্নের কোন এসিডটির pKa এর মান সবচেয়ে বেশি?",
+          options: {
+            A: "CH₃COOH",
+            B: "Cl₂CHCOOH",
+            C: "ClCH₂COOH",
+            D: "C₆H₅COOH",
+          },
+          correct: "A",
+          explanation:
+            "<p>pKa = -log(Ka)। pKa এর মান যত বেশি হবে, Ka এর মান তত কম হবে, এবং এসিড তত বেশি দুর্বল হবে।</p><ul><li>CH₃COOH (অ্যাসিটিক এসিড) এর pKa ≈ 4.76।</li><li>ClCH₂COOH (ক্লোরোঅ্যাসিটিক এসিড) এর pKa ≈ 2.86।</li><li>Cl₂CHCOOH (ডাইক্লোরোঅ্যাসিটিক এসিড) এর pKa ≈ 1.25।</li><li>C₆H₅COOH (বেনজয়িক এসিড) এর pKa ≈ 4.20।</li></ul><p>সুতরাং, CH₃COOH এর pKa এর মান সবচেয়ে বেশি, অর্থাৎ এটি সবচেয়ে দুর্বল এসিড।</p>",
+        },
+        {
+          id: 47,
+          question: "pKa-এর মান 4 হলে তা কোন শ্রেণীর এসিড?",
+          options: {
+            A: "খুব শক্তিশালী",
+            B: "মধ্যম শক্তিশালী",
+            C: "দুর্বল",
+            D: "কোনোটিই নয়",
+          },
+          correct: "B",
+          explanation:
+            "<p>pKa মান এসিডের তীব্রতা নির্দেশ করে। সাধারণত:</p><ul><li>pKa &lt; 0: খুব শক্তিশালী এসিড</li><li>0 &lt; pKa &lt; 4: মধ্যম শক্তিশালী এসিড</li><li>pKa &gt; 4: দুর্বল এসিড</li></ul><p>সুতরাং, pKa এর মান 4 হলে এটিকে মধ্যম শক্তিশালী এসিড হিসেবে শ্রেণীবদ্ধ করা হয়, কারণ এটি 0 থেকে 4 এর সীমার মধ্যে বা তার কাছাকাছি। তবে, কিছু শ্রেণিবিন্যাসে 4 থেকে 7 কে দুর্বল এসিডের অন্তর্ভুক্ত করা হয়। প্রদত্ত বিকল্প অনুযায়ী 'মধ্যম শক্তিশালী' বেশি উপযুক্ত।</p>",
+        },
+        {
+          id: 48,
+          question: "নিচের কোন এসিডটির Ka এর মান সবচেয়ে বেশি?",
+          options: {
+            A: "CH₃COOH",
+            B: "Cl₂CHCOOH",
+            C: "ClCH₂COOH",
+            D: "C₆H₅COOH",
+          },
+          correct: "B",
+          explanation:
+            "<p>Ka এর মান যত বেশি হবে, এসিড তত বেশি শক্তিশালী হবে। প্রতিস্থাপনকারী গ্রুপগুলির ইলেকট্রন আকর্ষণকারী প্রভাব এসিডের শক্তি বৃদ্ধি করে। ক্লোরিন একটি শক্তিশালী ইলেকট্রন আকর্ষণকারী গ্রুপ। যত বেশি ক্লোরিন পরমাণু থাকবে, এসিড তত বেশি শক্তিশালী হবে।</p><ul><li>CH₃COOH (অ্যাসিটিক এসিড) এর Ka ≈ 1.8 × 10⁻⁵।</li><li>ClCH₂COOH (ক্লোরোঅ্যাসিটিক এসিড) এর Ka ≈ 1.4 × 10⁻³।</li><li>Cl₂CHCOOH (ডাইক্লোরোঅ্যাসিটিক এসিড) এর Ka ≈ 2.0 × 10⁻²।</li><li>C₆H₅COOH (বেনজয়িক এসিড) এর Ka ≈ 6.3 × 10⁻⁵।</li></ul><p>সুতরাং, Cl₂CHCOOH (ডাইক্লোরোঅ্যাসিটিক এসিড) এর Ka এর মান সবচেয়ে বেশি।</p>",
+        },
+        {
+          id: 49,
+          question: "নিচের কোনটি লুইস এসিড?",
+          options: {
+            A: "H₂SO₄",
+            B: "HNO₃",
+            C: "AlCl₃",
+            D: "NH₃",
+          },
+          correct: "C",
+          explanation:
+            "<p>লুইস এসিড হলো ইলেকট্রন জোড় গ্রহণকারী প্রজাতি। AlCl₃ (অ্যালুমিনিয়াম ক্লোরাইড) একটি ইলেকট্রন ঘাটতি যৌগ (অ্যালুমিনিয়ামের অষ্টক পূর্ণ নয়), তাই এটি একটি ইলেকট্রন জোড় গ্রহণ করতে পারে এবং লুইস এসিড হিসেবে কাজ করে। H₂SO₄ এবং HNO₃ ব্রনস্টেড এসিড, এবং NH₃ একটি লুইস ক্ষারক।</p>",
+        },
+        {
+          id: 50,
+          question: "নিচের কোন কনজুগেটেড এসিড বেশি শক্তিশালী?",
+          options: {
+            A: "Na⁺",
+            B: "NH₄⁺",
+            C: "H₃O⁺",
+            D: "K⁺",
+          },
+          correct: "C",
+          explanation:
+            "<p>একটি কনজুগেটেড এসিডের শক্তি তার অনুবন্ধী ক্ষারকের শক্তির ব্যস্তানুপাতিক। অর্থাৎ, দুর্বলতম ক্ষারকের অনুবন্ধী এসিড সবচেয়ে শক্তিশালী হয়।</p><ul><li>Na⁺ এবং K⁺ হলো তীব্র ক্ষারক (NaOH, KOH) এর অনুবন্ধী এসিড, তাই তারা অত্যন্ত দুর্বল এসিড এবং জলীয় দ্রবণে প্রোটন ত্যাগ করে না।</li><li>NH₄⁺ (অ্যামোনিয়াম আয়ন) হলো দুর্বল ক্ষারক (NH₃) এর অনুবন্ধী এসিড, তাই এটি একটি দুর্বল এসিড।</li><li>H₃O⁺ (হাইড্রোনিয়াম আয়ন) হলো পানি (H₂O) এর অনুবন্ধী এসিড। পানি একটি খুব দুর্বল ক্ষারক, তাই H₃O⁺ একটি শক্তিশালী এসিড। HCl, H₂SO₄, HNO₃ এর মতো তীব্র এসিডগুলি জলীয় দ্রবণে H₃O⁺ আয়ন উৎপন্ন করে।</li></ul><p>সুতরাং, H₃O⁺ সবচেয়ে শক্তিশালী কনজুগেটেড এসিড।</p>",
+        },
+
+        {
+          id: 52,
+          question: "Na₂CO₃ এর জলীয় দ্রবণ কোন প্রকৃতির?",
+          options: {
+            A: "নিরপেক্ষ",
+            B: "এসিডীয়",
+            C: "উভধর্মী",
+            D: "ক্ষারীয়",
+          },
+          correct: "D",
+          explanation:
+            "<p>Na₂CO₃ (সোডিয়াম কার্বনেট) হলো একটি তীব্র ক্ষারক (NaOH) এবং একটি দুর্বল এসিড (H₂CO₃) থেকে গঠিত লবণ। এই ধরনের লবণ জলীয় দ্রবণে হাইড্রোলাইজ করে এবং শক্তিশালী ক্ষারীয় পরিবেশ তৈরি করে। কার্বনেট আয়ন (CO₃²⁻) পানি থেকে প্রোটন গ্রহণ করে এবং OH⁻ আয়ন উৎপন্ন করে, যার ফলে দ্রবণ ক্ষারীয় হয়।</p><p>CO₃²⁻ (aq) + H₂O (l) ⇌ HCO₃⁻ (aq) + OH⁻ (aq)</p>",
+        },
+        {
+          id: 53,
+          question: "NaCl এর সাথে H₂O যোগ করলে কোনটি ঘটে?",
+          options: {
+            A: "Na⁺ (aq) + Cl⁻ (aq)",
+            B: "NaOH (aq) + HCl (aq)",
+            C: "OH⁻ (aq) + Cl⁻ (aq)",
+            D: "Na⁺ + Cl⁻",
+          },
+          correct: "A",
+          explanation:
+            "<p>NaCl (সোডিয়াম ক্লোরাইড) একটি আয়নিক যৌগ। যখন এটি পানিতে যোগ করা হয়, তখন এটি বিয়োজিত হয়ে Na⁺ (সোডিয়াম আয়ন) এবং Cl⁻ (ক্লোরাইড আয়ন) উৎপন্ন করে, যা জলীয় দ্রবণে (aq) দ্রবীভূত থাকে। এটি একটি দ্রবীভূতকরণ প্রক্রিয়া, যেখানে লবণটি তার উপাদান আয়নে বিভক্ত হয়।</p>",
+        },
+        {
+          id: 54,
+          question: "সবচেয়ে দুর্বল এসিড কোনটি?",
+          options: {
+            A: "H₃BO₃",
+            B: "HNO₃",
+            C: "H₃PO₃",
+            D: "HClO₂",
+          },
+          correct: "C",
+          explanation: "-",
+        },
+        {
+          id: 55,
+          question: "অক্সিএসিডের তীব্রতার ক্ষেত্রে কোন নির্দেশনাটি সঠিক?",
+          options: {
+            A: "HClO₃ > HNO₂ > HClO",
+            B: "HNO₃ > H₃PO₃ > H₂SO₃",
+            C: "H₃PO₃ > HNO₂ > HClO",
+            D: "HNO₂ > H₂SO₃ > HClO",
+          },
+          correct: "A",
+          explanation:
+            "<p>অক্সিএসিডের তীব্রতা কেন্দ্রীয় পরমাণুর জারণ অবস্থা এবং কেন্দ্রীয় পরমাণুর সাথে সংযুক্ত অক্সিজেন পরমাণুর সংখ্যা বৃদ্ধির সাথে বৃদ্ধি পায় (অ-হাইড্রোজেন অক্সিজেন)।</p><ul><li>HClO₃ (ক্লোরিক এসিড): জারণ অবস্থা +5। এটি শক্তিশালী।</li><li>HNO₂ (নাইট্রাস এসিড): জারণ অবস্থা +3। এটি দুর্বল।</li><li>HClO (হাইপোক্লোরাস এসিড): জারণ অবস্থা +1। এটি অত্যন্ত দুর্বল।</li></ul><p>সুতরাং, HClO₃ &gt; HNO₂ &gt; HClO ক্রমটি সঠিক।</p>",
+        },
+        {
+          id: 56,
+          question: "হাইড্রোহ্যালিক এসিডের তীব্রতার সঠিক ক্রম কোনটি?",
+          options: {
+            A: "HI (aq) > HCl (aq) > HBr (aq) > HF (aq)",
+            B: "HI (aq) > HBr (aq) > HCl (aq) > HF (aq)",
+            C: "HCl (aq) > HI (aq) > HBr (aq) > HF (aq)",
+            D: "HCl (aq) = HF (aq) > HI (aq) > HBr (aq)",
+          },
+          correct: "B",
+          explanation:
+            "<p>হাইড্রোহ্যালিক এসিডের (HX) তীব্রতা H-X বন্ধনের শক্তির উপর নির্ভর করে। হ্যালোজেন পরমাণুর আকার বৃদ্ধির সাথে সাথে (F &lt; Cl &lt; Br &lt; I) H-X বন্ধনের দৈর্ঘ্য বৃদ্ধি পায় এবং বন্ধন শক্তি হ্রাস পায়, যার ফলে H⁺ আয়ন সহজে বিয়োজিত হতে পারে।</p><p>সুতরাং, তীব্রতার সঠিক ক্রম হলো: HI &gt; HBr &gt; HCl &gt; HF।</p>",
+        },
+        {
+          id: 57,
+          question: "H₂SO₄ এর কনজুগেট ক্ষার কোনটি?",
+          options: {
+            A: "SO₃²⁻",
+            B: "H₃O⁺",
+            C: "HSO₄⁻",
+            D: "H₂O",
+          },
+          correct: "C",
+          explanation:
+            "<p>একটি কনজুগেট ক্ষার এসিড থেকে একটি প্রোটন (H⁺) অপসারণের মাধ্যমে গঠিত হয়। H₂SO₄ (সালফিউরিক এসিড) একটি প্রোটন ত্যাগ করে HSO₄⁻ (হাইড্রোজেন সালফেট আয়ন) এ পরিণত হয়।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                            <label class="option" data-option="${option}">
+                                              <div class="circle">${option}</div>
+                                              <span class="option-text">${question.options[option]}</span>
+                                            </label>
+                                          `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                               <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                               <div class="explanation-content">
+                                                 <div class="explanation-label">ব্যাখ্যা:</div>
+                                                 ${question.explanation}
+                                               </div>
+                                             </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                          <p class="question-label">${
+                                            index + 1
+                                          }. ${question.question}</p>
+                                          <div class="options">
+                                            ${optionsHTML}
+                                          </div>
+                                          ${explanationHTML}
+                                        `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
